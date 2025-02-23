@@ -48,18 +48,10 @@ def speak_text(text, lang_code):
         
         # Ensure compatibility for both PC and mobile
         try:
-            import tempfile
-            import os
-            from playsound import playsound
-            
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_audio:
-                tts.save(tmp_audio.name)
-                tmp_audio_path = tmp_audio.name
-            
-            playsound(tmp_audio_path)
-            os.remove(tmp_audio_path)  # Cleanup after playing
-        except ImportError:
+            # Use Streamlit's built-in audio player for Safari compatibility
             st.audio(audio_fp, format='audio/mp3')
+        except Exception as e:
+            st.error(f"Error in playing audio: {e}")
     except Exception as e:
         st.error(f"Error in text-to-speech: {e}")
 
