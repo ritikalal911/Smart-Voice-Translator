@@ -46,19 +46,18 @@ def speak_text(text, lang_code):
         tts.write_to_fp(audio_fp)
         audio_fp.seek(0)
         
-        # Ensure cross-platform compatibility
+        # Ensure compatibility for both PC and mobile
         try:
-            import sounddevice as sd
-            import numpy as np
             import tempfile
-            from scipy.io.wavfile import write
+            import os
+            from playsound import playsound
             
-            with tempfile.NamedTemporaryFile(delete=True, suffix=".wav") as tmp_wav:
-                tts.save(tmp_wav.name)
-                fs, data = 24000, np.frombuffer(audio_fp.getvalue(), dtype=np.int16)
-                write(tmp_wav.name, fs, data)
-                sd.play(data, samplerate=fs)
-                sd.wait()
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_audio:
+                tts.save(tmp_audio.name)
+                tmp_audio_path = tmp_audio.name
+            
+            playsound(tmp_audio_path)
+            os.remove(tmp_audio_path)  # Cleanup after playing
         except ImportError:
             st.audio(audio_fp, format='audio/mp3')
     except Exception as e:
