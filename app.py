@@ -60,7 +60,7 @@ with col1:
     if "recognized_text" not in st.session_state:
         st.session_state["recognized_text"] = ""
     
-    st.write("Click the microphone icon to start recording:")
+    # st.write("Click the microphone icon to start recording:")
     result = recognize_from_mic()
     if result:
         st.session_state["recognized_text"] = result
