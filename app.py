@@ -4,28 +4,21 @@ from googletrans import Translator
 from gtts import gTTS
 import io
 import pygame
-from io import BytesIO
-import numpy as np
+from audio_recorder_streamlit import audio_recorder
 
 def recognize_from_mic():
-    # Create a recognizer instance
-    recognizer = sr.Recognizer()
-    
-    # Use st.audio_recorder() to capture audio from browser
-    audio_bytes = st.audio_recorder(
-        text="🎙️ Click to record",
-        recording_color="#e85952",
-        neutral_color="#6aa36f"
-    )
+    # Use audio_recorder from the new package
+    audio_bytes = audio_recorder()
     
     if audio_bytes:
         try:
-            # Convert audio bytes to AudioData
-            audio_segment = BytesIO(audio_bytes)
-            with sr.AudioFile(audio_segment) as source:
-                audio = recognizer.record(source)
-                text = recognizer.recognize_google(audio, language="en-IN")
-                return text
+            # Create a temporary file to store the audio
+            with io.BytesIO(audio_bytes) as audio_file:
+                recognizer = sr.Recognizer()
+                with sr.AudioFile(audio_file) as source:
+                    audio = recognizer.record(source)
+                    text = recognizer.recognize_google(audio, language="en-IN")
+                    return text
         except sr.UnknownValueError:
             return "Could not understand the audio."
         except sr.RequestError:
@@ -67,8 +60,7 @@ with col1:
     if "recognized_text" not in st.session_state:
         st.session_state["recognized_text"] = ""
     
-    # Replace button with direct audio recorder
-    st.write("Start recording your voice:")
+    st.write("Click the microphone icon to start recording:")
     result = recognize_from_mic()
     if result:
         st.session_state["recognized_text"] = result
