@@ -37,21 +37,16 @@ def translate_text(text, dest_lang):
 
 def speak_text(text, lang_code):
     try:
-        if not text.strip():
-            st.warning("No text to speak.")
-            return
-        
         tts = gTTS(text=text, lang=lang_code, slow=False)
         audio_fp = io.BytesIO()
         tts.write_to_fp(audio_fp)
         audio_fp.seek(0)
         
-        # Ensure compatibility for both PC and mobile
-        try:
-            # Use Streamlit's built-in audio player for Safari compatibility
-            st.audio(audio_fp, format='audio/mp3')
-        except Exception as e:
-            st.error(f"Error in playing audio: {e}")
+        pygame.mixer.init()
+        pygame.mixer.music.load(audio_fp, 'mp3')
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            continue
     except Exception as e:
         st.error(f"Error in text-to-speech: {e}")
 
