@@ -37,16 +37,17 @@ def translate_text(text, dest_lang):
 
 def speak_text(text, lang_code):
     try:
+        if not text.strip():
+            st.warning("No text to speak.")
+            return
+        
         tts = gTTS(text=text, lang=lang_code, slow=False)
         audio_fp = io.BytesIO()
         tts.write_to_fp(audio_fp)
         audio_fp.seek(0)
         
-        pygame.mixer.init()
-        pygame.mixer.music.load(audio_fp, 'mp3')
-        pygame.mixer.music.play()
-        while pygame.mixer.music.get_busy():
-            continue
+        # Play the audio using an alternative method to avoid pygame issues
+        st.audio(audio_fp, format='audio/mp3')
     except Exception as e:
         st.error(f"Error in text-to-speech: {e}")
 
