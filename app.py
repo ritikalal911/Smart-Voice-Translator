@@ -1,23 +1,38 @@
 import streamlit as st
-import pyttsx3
 import speech_recognition as sr
 from googletrans import Translator
 from gtts import gTTS
 import io
 import pygame
+from io import BytesIO
+import numpy as np
 
-def recognize_speech():
+def recognize_from_mic():
+    # Create a recognizer instance
     recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.info("Listening... Please speak now.")
+    
+    # Use st.audio_recorder() to capture audio from browser
+    audio_bytes = st.audio_recorder(
+        text="🎙️ Click to record",
+        recording_color="#e85952",
+        neutral_color="#6aa36f"
+    )
+    
+    if audio_bytes:
         try:
-            audio = recognizer.listen(source, timeout=5)
-            text = recognizer.recognize_google(audio, language="en-IN")
-            return text
+            # Convert audio bytes to AudioData
+            audio_segment = BytesIO(audio_bytes)
+            with sr.AudioFile(audio_segment) as source:
+                audio = recognizer.record(source)
+                text = recognizer.recognize_google(audio, language="en-IN")
+                return text
         except sr.UnknownValueError:
             return "Could not understand the audio."
         except sr.RequestError:
             return "Could not request results, check your internet connection."
+        except Exception as e:
+            return f"Error processing audio: {e}"
+    return None
 
 def translate_text(text, dest_lang):
     translator = Translator()
@@ -47,11 +62,17 @@ st.markdown("<h1 style='text-align: center;'>Speech Recognition & Translation Ap
 
 st.header("🎤 Speech Recognition")
 col1, col2 = st.columns(2)
+
 with col1:
     if "recognized_text" not in st.session_state:
         st.session_state["recognized_text"] = ""
-    if st.button("🎙️ Start Listening", use_container_width=True):
-        st.session_state["recognized_text"] = recognize_speech()
+    
+    # Replace button with direct audio recorder
+    st.write("Start recording your voice:")
+    result = recognize_from_mic()
+    if result:
+        st.session_state["recognized_text"] = result
+        
     st.text_area("Recognized Text", st.session_state["recognized_text"], height=150)
 
 st.header("🌎 Translation")
