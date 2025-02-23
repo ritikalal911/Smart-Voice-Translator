@@ -82,7 +82,6 @@ selected_language = st.selectbox("Select Language for Translation", list(languag
 with col2:
     if "translated_text" not in st.session_state:
         st.session_state["translated_text"] = ""
-    st.label("\n")
     if st.button("🔄 Translate", use_container_width=True):
         if st.session_state["recognized_text"]:
             st.session_state["translated_text"] = translate_text(st.session_state["recognized_text"], language_groups[selected_group][selected_language])
