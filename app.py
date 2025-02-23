@@ -3,29 +3,22 @@ import speech_recognition as sr
 from googletrans import Translator
 from gtts import gTTS
 import io
-import pygame
-from audio_recorder_streamlit import audio_recorder
 
-def recognize_from_mic():
-    # Use audio_recorder from the new package
-    audio_bytes = audio_recorder()
-    
-    if audio_bytes:
-        try:
-            # Create a temporary file to store the audio
-            with io.BytesIO(audio_bytes) as audio_file:
-                recognizer = sr.Recognizer()
-                with sr.AudioFile(audio_file) as source:
-                    audio = recognizer.record(source)
-                    text = recognizer.recognize_google(audio, language="en-IN")
-                    return text
-        except sr.UnknownValueError:
-            return "Could not understand the audio."
-        except sr.RequestError:
-            return "Could not request results, check your internet connection."
-        except Exception as e:
-            return f"Error processing audio: {e}"
-    return None
+def recognize_speech():
+    recognizer = sr.Recognizer()
+    try:
+        with sr.Microphone() as source:
+            recognizer.adjust_for_ambient_noise(source)  # Helps prevent background noise errors
+            st.info("Listening... Please speak now.")
+            audio = recognizer.listen(source, timeout=5)
+            text = recognizer.recognize_google(audio, language="en-IN")
+            return text
+    except sr.UnknownValueError:
+        return "Could not understand the audio."
+    except sr.RequestError:
+        return "Could not request results, check your internet connection."
+    except Exception as e:
+        return f"Error: {e}"
 
 def translate_text(text, dest_lang):
     translator = Translator()
@@ -46,29 +39,25 @@ def speak_text(text, lang_code):
         tts.write_to_fp(audio_fp)
         audio_fp.seek(0)
         
-        # Play the audio using an alternative method to avoid pygame issues
+        # Play audio directly in Streamlit
         st.audio(audio_fp, format='audio/mp3')
     except Exception as e:
         st.error(f"Error in text-to-speech: {e}")
 
-st.set_page_config(page_title="Speech Translator", layout="wide")
-st.markdown("<h1 style='text-align: center;'>Speech Recognition & Translation App</h1>", unsafe_allow_html=True)
+# UI Layout Optimized for Mobile
+st.set_page_config(page_title="Speech Translator", layout="centered")
+st.title("🌍 Speech Recognition & Translation App")
 
-st.header("🎤 Speech Recognition")
-col1, col2 = st.columns(2)
+st.subheader("🎤 Speech Recognition")
+if "recognized_text" not in st.session_state:
+    st.session_state["recognized_text"] = ""
 
-with col1:
-    if "recognized_text" not in st.session_state:
-        st.session_state["recognized_text"] = ""
-    
-    # st.write("Click the microphone icon to start recording:")
-    result = recognize_from_mic()
-    if result:
-        st.session_state["recognized_text"] = result
-        
-    st.text_area("Recognized Text", st.session_state["recognized_text"], height=150)
+if st.button("🎙️ Start Listening", use_container_width=True):
+    st.session_state["recognized_text"] = recognize_speech()
 
-st.header("🌎 Translation")
+st.text_area("Recognized Text", st.session_state["recognized_text"], height=100)
+
+st.subheader("🌎 Translation")
 language_groups = {
     "Indo-Aryan Languages": {"English": "en", "Hindi": "hi", "Punjabi": "pa", "Marathi": "mr", "Bengali": "bn", "Gujarati": "gu", "Urdu": "ur"},
     "South Indian Languages": {"Tamil": "ta", "Telugu": "te", "Kannada": "kn", "Malayalam": "ml"},
@@ -78,19 +67,20 @@ language_groups = {
 }
 
 selected_group = st.selectbox("Select Language Group", list(language_groups.keys()))
-selected_language = st.selectbox("Select Language for Translation", list(language_groups[selected_group].keys()))
+selected_language = st.selectbox("Select Translation Language", list(language_groups[selected_group].keys()))
 
-with col2:
-    if "translated_text" not in st.session_state:
-        st.session_state["translated_text"] = ""
-    if st.button("🔄 Translate", use_container_width=True):
-        if st.session_state["recognized_text"]:
-            st.session_state["translated_text"] = translate_text(st.session_state["recognized_text"], language_groups[selected_group][selected_language])
-        else:
-            st.warning("Please recognize speech first before translating.")
-    st.text_area("Translated Text", st.session_state["translated_text"], height=150)
+if "translated_text" not in st.session_state:
+    st.session_state["translated_text"] = ""
 
-st.header("🔊 Speak Translation")
+if st.button("🔄 Translate", use_container_width=True):
+    if st.session_state["recognized_text"]:
+        st.session_state["translated_text"] = translate_text(st.session_state["recognized_text"], language_groups[selected_group][selected_language])
+    else:
+        st.warning("Please recognize speech first before translating.")
+
+st.text_area("Translated Text", st.session_state["translated_text"], height=100)
+
+st.subheader("🔊 Speak Translation")
 if st.button("📢 Play Audio", use_container_width=True):
     if st.session_state["translated_text"]:
         speak_text(st.session_state["translated_text"], language_groups[selected_group][selected_language])
